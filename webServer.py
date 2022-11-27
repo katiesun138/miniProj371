@@ -35,10 +35,10 @@ while True:
 
         # Send the content of the file to the client
         # ...
-
-        for i in range(0, len(outputdata)):
-            connectionSocket1, addr = serverSocket.accept()
-            connectionSocket1.send(bytes(outputdata[i], 'UTF-8'))
+        # print(len(outputdata))
+        # for i in range(0, len(outputdata)):
+        #     connectionSocket1, addr = serverSocket.accept()
+        #     connectionSocket1.send(bytes(outputdata[i], 'UTF-8'))
         connectionSocket.close()
     except IOError:
         connectionSocket.send(bytes('\nHTTP/1.1 404 Not Found\n\n', 'UTF-8'))
