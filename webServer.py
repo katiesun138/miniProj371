@@ -2,7 +2,7 @@
 from socket import *
 import sys
 
-serverPort = 3001
+serverPort = 3002
 serverSocket = socket(AF_INET, SOCK_STREAM)  # this creates a socket object
 
 serverSocket.bind(('', serverPort))  # binds to the port
@@ -27,21 +27,16 @@ while True:
         f = open(filename[1:])
         outputdata = f.read()
         print(outputdata)
-        # Send one HTTP header line into socket
-        # ...
 
+        # Send one HTTP header line into socket
         connectionSocket.send(bytes('\nHTTP/1.1 200 OK\n\n', 'UTF-8'))
+
+        # Send the content of the file to the client        
         connectionSocket.send(bytes(outputdata, 'UTF-8'))
 
-        # Send the content of the file to the client
-        # ...
-        # print(len(outputdata))
-        # for i in range(0, len(outputdata)):
-        #     connectionSocket1, addr = serverSocket.accept()
-        #     connectionSocket1.send(bytes(outputdata[i], 'UTF-8'))
         connectionSocket.close()
+
     except IOError:
+        # Send response message for file not found
         connectionSocket.send(bytes('\nHTTP/1.1 404 Not Found\n\n', 'UTF-8'))
         connectionSocket.close()
-        # Send response message for file not found
-        # Close client socket
