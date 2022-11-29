@@ -35,7 +35,9 @@ while True:
         connectionSocket.send(bytes(outputdata, 'UTF-8'))
 
         connectionSocket.close()
-
+    except socket.timeout:
+        connectionSocket.send(bytes('\nHTTP/1.1 408 Request Timeout\n\n', 'UTF-8'))
+        connectionSocket.close()
     except IOError:
         # Send response message for file not found
         connectionSocket.send(bytes('\nHTTP/1.1 404 Not Found\n\n', 'UTF-8'))
