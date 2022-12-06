@@ -6,68 +6,89 @@ if len(sys.argv) <= 1:
     print('Usage : "python ProxyServer.py server_ip"\n[server_ip : It is the IP Address Of Proxy Server')
     sys.exit(2)
 
-tcpSerSock = socket(AF_INET, SOCK_STREAM)
-
-# Fill in start.
-# Fill in end.
+serverPort = 8888
+serverSocket = socket(AF_INET, SOCK_STREAM)
+serverSocket.bind(('', serverPort))  # binds to the port
+serverSocket.listen(1)  # waits for 1 client connection
 
 while 1:
 
     print('Ready to serve...')
-    tcpCliSock, addr = tcpSerSock.accept()
+    connectionSocket, addr = serverSocket.accept()
     print('Received a connection from:', addr)
 
-    message = # Fill in start. # Fill in end.
-    print(message)
-
+    rawMessage = connectionSocket.recv(1024)
     # Extract the filename from the given message
-    print(message.split()[1])
-    filename = message.split()[1].partition("/")[2]
+    print(rawMessage.split()[1])
+    message = str(rawMessage, encoding='utf8')
+    filename = message.split()[1].split("/")[1]
     print(filename)
     fileExist = "false"
     filetouse = "/" + filename
     print(filetouse)
+
     try:
-        # Check wether the file exist in the cache
-        f = open(filetouse[1:], "r") 
+        # Check whether the file exist in the cache
+        f = open(filetouse[1:], "rb") 
         outputdata = f.readlines() 
         fileExist = "true"
+        print("File exists")
+
         # ProxyServer finds a cache hit and generates a response message
-        tcpCliSock.send("HTTP/1.0 200 OK\r\n") 
-        tcpCliSock.send("Content-Type:text/html\r\n")
-        # Fill in start.
-        # Fill in end.
+        connectionSocket.send(bytes("HTTP/1.0 200 OK\r\n", 'UTF-8'))
+        connectionSocket.send(bytes("Content-Type:text/html\r\n", 'UTF-8'))
+
+        for i in range(0, len(outputdata)):
+            connectionSocket.send(outputdata[i])
+        f.close()
         print('Read from cache') 
     
     # Error handling for file not found in cache
     except IOError:
         if fileExist == "false": 
         # Create a socket on the proxyserver
-        c = # Fill in start. # Fill in end.
-        hostn = filename.replace("www.","",1) 
-        print(hostn) 
-        try:
-            # Connect to the socket to port 80
-            # Fill in start.
-            # Fill in end.
-            # Create a temporary file on this socket and ask port 80 for the file requested by the client
-            fileobj = c.makefile('r', 0) 
-            fileobj.write("GET "+"http://" + filename + " HTTP/1.0\n\n") 
-            # Read the response into buffer
-            # Fill in start.
-            # Fill in end.
-            # Create a new file in the cache for the requested file. 
-            # Also send the response in the buffer to client socket and the corresponding file in the cache
-            tmpFile = open("./" + filename,"wb") 
-            # Fill in start.
-            # Fill in end.
-        except:
-            print("Illegal request") 
+            print("File does not exist")
+            print("Creating a socket on the proxy server...")
+            proxySocket = socket(AF_INET, SOCK_STREAM)
+            hostn = filename.replace("www.","",1) 
+            print(hostn) 
+            try:
+                # Connect the socket to port 80
+                proxySocket.connect((hostn, 80))
+                print("Connected to original server at port 80")
+
+                # Create a temporary file on this socket and ask port 80 for the file requested by the client
+                fileobj = proxySocket.makefile('rwb') 
+                print("Created tmp file on socket")
+
+                string = bytes("GET "+"http://" + filename + " HTTP/1.0\n\n", 'UTF-8')
+                proxySocket.send(string)
+                fileobj.write(string) 
+               
+                # Read the response into buffer
+                buffer = fileobj.readlines()
+                print(buffer)
+
+                # Create a new file in the cache for the requested file. 
+                # Also send the response in the buffer to client socket and the corresponding file in the cache
+                tmpFile = open("./" + filename,"wb")
+                print("tmp file in cache opened")
+                #connectionSocket.send(bytes('HTTP/1.1 200 OK\r\n', 'UTF-8'))    
+                for i in range(0, len(buffer)):
+                    tmpFile.write(buffer[i])
+                    connectionSocket.send(buffer[i])
+                tmpFile.close()
+            except:
+                connectionSocket.send(bytes("HTTP/1.1 400 Bad Request\r\n", 'UTF-8'))
+                connectionSocket.send(bytes("Content-Type: text/html\r\n",'UTF-8'))
+                connectionSocket.send(bytes("\r\n", 'UTF-8'))
+                connectionSocket.send(bytes("<html><head></head><body><h1>400 Bad Request</h1></body></html>\r\n", 'UTF-8'))
+                print("Illegal request") 
         else:
             # HTTP response message for file not found
-            tcpCliSock.send(bytes("\nHTTP/1.0 200 OK\n\n", 'UTF-8'))
+            connectionSocket.send(bytes("HTTP/1.1 404 Not Found\r\n", 'UTF-8'))
+            connectionSocket.send(bytes("Content-Type: text/html\r\n",'UTF-8'))
+            connectionSocket.send(bytes("\r\n", 'UTF-8'))
+            connectionSocket.send(bytes("<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n", 'UTF-8'))
     # Close the client and the server sockets 
-    tcpCliSock.close() 
-tcpSerSock.close()
-# Fill in start.
-# Fill in end.
+    connectionSocket.close() 
