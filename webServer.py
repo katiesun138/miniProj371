@@ -50,5 +50,9 @@ while True:
             "<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n", 'UTF-8'))
         connectionSocket.close()
     except IOError:
-        connectionSocket.send(bytes('\nHTTP/1.1 400 Bad Request\n\n', 'UTF-8'))
+        connectionSocket.send(bytes('HTTP/1.1 400 Bad Request\r\n', 'UTF-8'))
+        connectionSocket.send(bytes("Content-Type: text/html\r\n", 'UTF-8'))
+        connectionSocket.send(bytes("\r\n", 'UTF-8'))
+        connectionSocket.send(bytes(
+            "<html><head></head><body><h1>400 Bad Request</h1></body></html>\r\n", 'UTF-8'))
         connectionSocket.close()
