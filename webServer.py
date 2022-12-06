@@ -36,23 +36,21 @@ while True:
         connectionSocket.send(bytes(outputdata, 'UTF-8'))
         connectionSocket.close()
 
-    except socket.timeout:
-        connectionSocket.send(
-            bytes('\nHTTP/1.1 408 Request Timeout\n\n', 'UTF-8'))
-        connectionSocket.close()
+    #except socket.timeout:
+    #    connectionSocket.send(
+    #        bytes('\nHTTP/1.1 408 Request Timeout\n\n', 'UTF-8'))
 
     except FileNotFoundError:
         # Send response message for file not found
-        connectionSocket.send(bytes("HTTP/1.1 404 Not Found\r\n", 'UTF-8'))
+        connectionSocket.send(bytes('HTTP/1.1 404 File Not Found\r\n', 'UTF-8'))
         connectionSocket.send(bytes("Content-Type: text/html\r\n", 'UTF-8'))
         connectionSocket.send(bytes("\r\n", 'UTF-8'))
         connectionSocket.send(bytes(
-            "<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n", 'UTF-8'))
-        connectionSocket.close()
+            "<html><head></head><body><h1>404 File Not Found</h1></body></html>\r\n", 'UTF-8'))
     except IOError:
         connectionSocket.send(bytes('HTTP/1.1 400 Bad Request\r\n', 'UTF-8'))
         connectionSocket.send(bytes("Content-Type: text/html\r\n", 'UTF-8'))
         connectionSocket.send(bytes("\r\n", 'UTF-8'))
         connectionSocket.send(bytes(
             "<html><head></head><body><h1>400 Bad Request</h1></body></html>\r\n", 'UTF-8'))
-        connectionSocket.close()
+    connectionSocket.close()

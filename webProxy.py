@@ -6,7 +6,7 @@ if len(sys.argv) <= 1:
     print('Usage : "python ProxyServer.py server_ip"\n[server_ip : It is the IP Address Of Proxy Server')
     sys.exit(2)
 
-serverPort = 3002
+serverPort = 8888
 serverSocket = socket(AF_INET, SOCK_STREAM)
 serverSocket.bind(('', serverPort))  # binds to the port
 serverSocket.listen(1)  # waits for 1 client connection
@@ -20,8 +20,8 @@ while 1:
     rawMessage = connectionSocket.recv(1024)
     # Extract the filename from the given message
     print(rawMessage.split()[1])
-    message = rawMessage.decode()
-    filename = message.split()[1].partition("/")[2]
+    message = str(rawMessage, encoding='utf8')
+    filename = message.split()[1].split("/")[1]
     print(filename)
     fileExist = "false"
     filetouse = "/" + filename
@@ -29,7 +29,7 @@ while 1:
 
     try:
         # Check whether the file exist in the cache
-        f = open(filetouse[1:], "r") 
+        f = open(filetouse[1:], "rb") 
         outputdata = f.readlines() 
         fileExist = "true"
         print("File exists")
@@ -37,7 +37,10 @@ while 1:
         # ProxyServer finds a cache hit and generates a response message
         connectionSocket.send(bytes("HTTP/1.0 200 OK\r\n", 'UTF-8'))
         connectionSocket.send(bytes("Content-Type:text/html\r\n", 'UTF-8'))
-        connectionSocket.send(bytes(outputdata, 'UTF-8'))
+
+        for i in range(0, len(outputdata)):
+            connectionSocket.send(outputdata[i])
+        f.close()
         print('Read from cache') 
     
     # Error handling for file not found in cache
@@ -51,20 +54,30 @@ while 1:
             print(hostn) 
             try:
                 # Connect the socket to port 80
-                proxySocket.bind((hostn, 80))
+                proxySocket.connect((hostn, 80))
+                print("Connected to original server at port 80")
+
                 # Create a temporary file on this socket and ask port 80 for the file requested by the client
-                fileobj = proxySocket.makefile('r', 0) 
-                fileobj.write("GET "+"http://" + filename + " HTTP/1.0\n\n") 
+                fileobj = proxySocket.makefile('rwb') 
+                print("Created tmp file on socket")
+
+                string = bytes("GET "+"http://" + filename + " HTTP/1.0\n\n", 'UTF-8')
+                proxySocket.send(string)
+                fileobj.write(string) 
+               
                 # Read the response into buffer
                 buffer = fileobj.readlines()
+                print(buffer)
 
                 # Create a new file in the cache for the requested file. 
                 # Also send the response in the buffer to client socket and the corresponding file in the cache
                 tmpFile = open("./" + filename,"wb")
-                tmpFile.write(buffer)
-                connectionSocket.send(bytes('HTTP/1.1 200 OK\r\n', 'UTF-8'))    
-                connectionSocket.send(bytes("Content-Type:text/html\r\n", 'UTF-8'))  
-                connectionSocket.send(bytes(buffer, 'UTF-8'))
+                print("tmp file in cache opened")
+                #connectionSocket.send(bytes('HTTP/1.1 200 OK\r\n', 'UTF-8'))    
+                for i in range(0, len(buffer)):
+                    tmpFile.write(buffer[i])
+                    connectionSocket.send(buffer[i])
+                tmpFile.close()
             except:
                 connectionSocket.send(bytes("HTTP/1.1 400 Bad Request\r\n", 'UTF-8'))
                 connectionSocket.send(bytes("Content-Type: text/html\r\n",'UTF-8'))
