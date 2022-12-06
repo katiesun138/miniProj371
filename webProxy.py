@@ -6,7 +6,7 @@ if len(sys.argv) <= 1:
     print('Usage : "python ProxyServer.py server_ip"\n[server_ip : It is the IP Address Of Proxy Server')
     sys.exit(2)
 
-serverPort = 8888
+serverPort = 10003
 serverSocket = socket(AF_INET, SOCK_STREAM)
 serverSocket.bind(('', serverPort))  # binds to the port
 serverSocket.listen(1)  # waits for 1 client connection
@@ -61,19 +61,19 @@ while 1:
                 fileobj = proxySocket.makefile('rwb') 
                 print("Created tmp file on socket")
 
-                string = bytes("GET "+"http://" + filename + " HTTP/1.0\n\n", 'UTF-8')
-                proxySocket.send(string)
-                fileobj.write(string) 
+                proxySocket.send(bytes("GET "+"http://" + filename + " HTTP/1.0\n\n", 'UTF-8'))
+                fileobj.write(bytes("GET "+"http://" + filename + " HTTP/1.0\n\n", 'UTF-8')) 
                
                 # Read the response into buffer
                 buffer = fileobj.readlines()
+                fileobj.close()
                 print(buffer)
 
                 # Create a new file in the cache for the requested file. 
                 # Also send the response in the buffer to client socket and the corresponding file in the cache
                 tmpFile = open("./" + filename,"wb")
-                print("tmp file in cache opened")
-                #connectionSocket.send(bytes('HTTP/1.1 200 OK\r\n', 'UTF-8'))    
+                print("tmp file in cache opened")  
+
                 for i in range(0, len(buffer)):
                     tmpFile.write(buffer[i])
                     connectionSocket.send(buffer[i])
