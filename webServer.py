@@ -7,7 +7,6 @@ serverSocket = socket(AF_INET, SOCK_STREAM)  # this creates a socket object
 
 serverSocket.bind(('', serverPort))  # binds to the port
 serverSocket.listen(1)  # waits for 1 client connection
-
 print("the server port is binded to port: ", serverPort)
 
 while True:
@@ -33,12 +32,11 @@ while True:
 
         # Send the content of the file to the client        
         connectionSocket.send(bytes(outputdata, 'UTF-8'))
-
-        connectionSocket.close()
-    except socket.timeout:
-        connectionSocket.send(bytes('\nHTTP/1.1 408 Request Timeout\n\n', 'UTF-8'))
         connectionSocket.close()
     except IOError:
         # Send response message for file not found
-        connectionSocket.send(bytes('\nHTTP/1.1 404 Not Found\n\n', 'UTF-8'))
+        connectionSocket.send(bytes("HTTP/1.1 404 Not Found\r\n", 'UTF-8'))
+        connectionSocket.send(bytes("Content-Type: text/html\r\n",'UTF-8'))
+        connectionSocket.send(bytes("\r\n", 'UTF-8'))
+        connectionSocket.send(bytes("<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n", 'UTF-8'))
         connectionSocket.close()
