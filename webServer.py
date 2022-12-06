@@ -3,34 +3,39 @@ from socket import *
 import sys
 import os
 
-serverPort = 3000
+hostname = gethostname()
+ip_address = gethostbyname(hostname)
+print(f"Hostname: {hostname}")
+print(f"IP Address: {ip_address}")
+
+
+serverPort = 3001
 serverSocket = socket(AF_INET, SOCK_STREAM)  # this creates a socket object
-path = '/Users/sunfamily/Desktop/miniProject371/test.html'
+path = os.path.join(sys.path[0], 'test.html')
 
 # serverSocket.settimeout(0.01)
 
-serverSocket.bind(('', serverPort))  # binds to the port
+serverSocket.bind((ip_address, serverPort))  # binds to the port
 serverSocket.listen(1)  # waits for 1 client connection
-print("the server port is binded to port: ", serverPort)
+# print("the server port is binded to port: ", serverPort)
 date = None
 
 while True:
     # Establish the connection
     modification_time = os.path.getmtime(path)
-    print("entering true loop")
+    # will need to compare modification_time variable and the client's if-modified-since section in the request
+    # see which one is bigger, or equal, if equal then output 304 code
+
+    print("Waiting...")
     connectionSocket, addr = serverSocket.accept()
     try:
 
         # get filename from connectionSocket and open file
-        connectionSocket.settimeout(0.001)
+        connectionSocket.settimeout(0.1)
         message = connectionSocket.recv(1024)
-        # print("WHATTTTTT STATUS:", message.status_code)
 
         # print(message, '::', message.split()[0], ':', message.split()[1])
         filename = message.split()[1]
-        # print("EEEEEK", filename, "DONEEE")
-
-        # print(filename, '||', filename[1:])
         f = open(filename[1:])
         outputdata = f.read()
         # print(outputdata)
@@ -45,7 +50,12 @@ while True:
     except timeout:
         print("408 Request Timeout")
         connectionSocket.send(
-            bytes('\nHTTP/1.1 408 Request Timeout\n\n', 'UTF-8'))
+            bytes('HTTP/1.1 408 Request Timeout\r\n', 'UTF-8'))
+        connectionSocket.send(bytes("Content-Type: text/html\r\n", 'UTF-8'))
+        connectionSocket.send(bytes("\r\n", 'UTF-8'))
+        connectionSocket.send(bytes(
+            "<html><head></head><body><h1>408 Request Timeout</h1></body></html>\r\n", 'UTF-8'))
+        print("BEFORE TIMEOUT CLOSE")
         connectionSocket.close()
 
     except FileNotFoundError:
@@ -56,10 +66,11 @@ while True:
         connectionSocket.send(bytes("\r\n", 'UTF-8'))
         connectionSocket.send(bytes(
             "<html><head></head><body><h1>404 File Not Found</h1></body></html>\r\n", 'UTF-8'))
+        connectionSocket.close()
     except IOError:
         connectionSocket.send(bytes('HTTP/1.1 400 Bad Request\r\n', 'UTF-8'))
         connectionSocket.send(bytes("Content-Type: text/html\r\n", 'UTF-8'))
         connectionSocket.send(bytes("\r\n", 'UTF-8'))
         connectionSocket.send(bytes(
             "<html><head></head><body><h1>400 Bad Request</h1></body></html>\r\n", 'UTF-8'))
-    connectionSocket.close()
+        connectionSocket.close()
