@@ -50,45 +50,46 @@ while 1:
             print("File does not exist")
             print("Creating a socket on the proxy server...")
             proxySocket = socket(AF_INET, SOCK_STREAM)
-            hostn = filename.replace("www.","",1) 
-            print(hostn) 
             try:
-                # Connect the socket to port 80
-                proxySocket.connect((hostn, 80))
-                print("Connected to original server at port 80")
+                hostn = filename.replace("www.","",1) 
+                print(hostn) 
+                try:
+                    # Connect the socket to port 80
+                    proxySocket.connect((hostn, 80))
+                    print("Connected to original server at port 80")
 
-                # Create a temporary file on this socket and ask port 80 for the file requested by the client
-                fileobj = proxySocket.makefile('rwb') 
-                print("Created tmp file on socket")
+                    # Create a temporary file on this socket and ask port 80 for the file requested by the client
+                    fileobj = proxySocket.makefile('rwb') 
+                    print("Created tmp file on socket")
 
-                proxySocket.send(bytes("GET "+"http://" + filename + " HTTP/1.0\n\n", 'UTF-8'))
-                fileobj.write(bytes("GET "+"http://" + filename + " HTTP/1.0\n\n", 'UTF-8')) 
-               
-                # Read the response into buffer
-                buffer = fileobj.readlines()
-                fileobj.close()
-                print(buffer)
+                    proxySocket.send(bytes("GET "+"http://" + filename + " HTTP/1.0\n\n", 'UTF-8'))
+                    fileobj.write(bytes("GET "+"http://" + filename + " HTTP/1.0\n\n", 'UTF-8')) 
+                
+                    # Read the response into buffer
+                    buffer = fileobj.readlines()
+                    fileobj.close()
+                    print(buffer)
 
-                # Create a new file in the cache for the requested file. 
-                # Also send the response in the buffer to client socket and the corresponding file in the cache
-                tmpFile = open("./" + filename,"wb")
-                print("tmp file in cache opened")  
+                    # Create a new file in the cache for the requested file. 
+                    # Also send the response in the buffer to client socket and the corresponding file in the cache
+                    tmpFile = open("./" + filename,"wb")
+                    print("tmp file in cache opened")  
 
-                for i in range(0, len(buffer)):
-                    tmpFile.write(buffer[i])
-                    connectionSocket.send(buffer[i])
-                tmpFile.close()
+                    for i in range(0, len(buffer)):
+                        tmpFile.write(buffer[i])
+                        connectionSocket.send(buffer[i])
+                    tmpFile.close()
+                except:
+                    connectionSocket.send(bytes("HTTP/1.1 404 Not Found\r\n", 'UTF-8'))
+                    connectionSocket.send(bytes("Content-Type: text/html\r\n",'UTF-8'))
+                    connectionSocket.send(bytes("\r\n", 'UTF-8'))
+                    connectionSocket.send(bytes("<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n", 'UTF-8'))
             except:
                 connectionSocket.send(bytes("HTTP/1.1 400 Bad Request\r\n", 'UTF-8'))
                 connectionSocket.send(bytes("Content-Type: text/html\r\n",'UTF-8'))
                 connectionSocket.send(bytes("\r\n", 'UTF-8'))
                 connectionSocket.send(bytes("<html><head></head><body><h1>400 Bad Request</h1></body></html>\r\n", 'UTF-8'))
                 print("Illegal request") 
-        else:
             # HTTP response message for file not found
-            connectionSocket.send(bytes("HTTP/1.1 404 Not Found\r\n", 'UTF-8'))
-            connectionSocket.send(bytes("Content-Type: text/html\r\n",'UTF-8'))
-            connectionSocket.send(bytes("\r\n", 'UTF-8'))
-            connectionSocket.send(bytes("<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n", 'UTF-8'))
     # Close the client and the server sockets 
     connectionSocket.close() 
